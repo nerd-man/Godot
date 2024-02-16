@@ -3,13 +3,12 @@ extends TileMap
 @export var variable = 0
 
 var noise = FastNoiseLite.new()
-
-var width = 32
-var height = 32
+var chunk_size = 8
 
 @onready var player = get_tree().current_scene.get_node('Player')
 
-var loaded_chunks = []
+
+var loaded_chunks = {}
 
 func _ready():
 	noise.seed = randi()
@@ -18,23 +17,21 @@ func _ready():
 
 func _process(delta):
 	var player_tile_pos = local_to_map(player.position)
-	generate_chunk(player_tile_pos)
 	
 
-func generate_chunk(pos):
-	for x in range(width):
-		for y in range(height):
-			var temp = int(noise.get_noise_1d(pos.x - (width/ 2) + x) * 10)
+func generate_chunk(x, y):
+	var chunk_data = []
+	for y_pos in range(chunk_size):
+		for x_pos in range(chunk_size):
+			var target_x = x * chunk_size + x_pos
+			var target_y = y * chunk_size + x_pos
+			var tile_type = 0
 			
-			if temp > -1:
-				set_cell(0, Vector2i(pos.x - (width / 2) + x, temp), 1, Vector2(1, 0))
-			else:
-				# Temperary "biome" picker will actual biome noise later
-				set_cell(0, Vector2i(pos.x - (width / 2) + x, temp), 1, Vector2(0, 3))
-
-			# If the block is below the noise then fill it with dirt
-			if pos.y - (height / 2)+ y > temp:
-				set_cell(0, Vector2i(pos.x - (width / 2) + x, pos.y - (height / 2) + y), 1, Vector2(1, 1))
+			if target_y > 10:
+				tile_type = 2
+			elif target_y == 10:
+				tile_type = 1
 			
-			
-		
+			if tile_type != 0:
+				chunk_data.append([Vector2(target_x, target_y), target_y, tile_type])
+			return chunk_data
